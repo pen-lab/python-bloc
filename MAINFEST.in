@@ -1,0 +1,4 @@
+graft bloc
+include requirements*.txt
+global-exclude __pycache__
+global-exclude *.py[co]
