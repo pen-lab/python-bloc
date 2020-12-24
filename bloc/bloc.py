@@ -1,4 +1,4 @@
-from asyncio import Future
+from asyncio import Future, sleep
 
 from typing import Final
 from typing import Any
@@ -28,29 +28,35 @@ class Bloc(ABC, Generic[T]):
     observer: Final[Observer]
 
     @property
+    @abstractmethod
     def initial_state(self) -> T:
-        return None
+        ...
 
     def __init__(self, start_event, loop) -> None:
         aio_scheduler = AsyncIOScheduler(loop)
-        self._event_subject.pipe(
-             map(self.map_event_to_state)
-        ).subscribe(self.observer, scheduler=aio_scheduler)
+        # self._event_subject.pipe(
+        #      map(self.map_event_to_state)
+        # ).subscribe(self.observer, scheduler=aio_scheduler)
+        #
+        self._event_subject.subscribe(self.observer, scheduler=aio_scheduler)
 
         # self.dispatch(start_event)
 
     async def dispatch(self, event: Event) -> None:
-        future = Future()
-        event.future = future
-        self._event_subject.on_next(event)
-        await future
+        # await sleep(5)
+
+        # future = Future()
+        # event.future = future
+        state = await self.map_event_to_state(event)
+        self._event_subject.on_next(state)
+        # await future
 
     @property
     def state(self) -> T:
         return self._state
 
     @abstractmethod
-    def map_event_to_state(self, event) -> str:
+    async def map_event_to_state(self, event: Event) -> T:
         ...
 
     def dispose(self) -> None:
