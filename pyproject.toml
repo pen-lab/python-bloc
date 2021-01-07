@@ -5,8 +5,8 @@ description = ""
 authors = ["pen-dev <pelipenkovladislav@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-Rx = "3.1.1"
+python = "^3.9"
+aioreactive = "^0.15.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "5.4.1"
