@@ -31,15 +31,16 @@ class CounterBloc(Bloc[Event, str]):
     async def map_event_to_state(self, event: Event) -> Stream[str]:
 
         if isinstance(event, Increment):
-            self._state = 'state 1'
-            yield await asyncio.sleep(5, self._state)
+            await asyncio.sleep(5)
+            return 'state 1'
         else:
-            self._state = 'state 2'
-            yield self._state
+            return 'state 2'
 
 
 async def main(bloc) -> None:
-
+    await bloc._bind_state_subject()
+    await bloc.dispatch(Increment())
+    await bloc.dispatch(Decrement())
     await bloc.dispatch(Increment())
     # await asyncio.gather(
     #     bloc.dispatch(Increment()),

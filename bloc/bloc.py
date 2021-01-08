@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 import aioreactive as rx
 from aioreactive.subject import AsyncMultiSubject as Stream
+# from aioreactive.subject import
 from aioreactive.combine import pipe
 from bloc.transition import Transition
 
@@ -13,8 +14,8 @@ S = TypeVar('S')
 
 class Bloc(ABC, Generic[E, S]):
 
-    _event_subject: Stream[E]
-    _state_subject: Stream[S]
+    # _event_subject: Stream[E]
+    # _state_subject: Stream[S]
 
     @property
     @abstractmethod
@@ -22,30 +23,42 @@ class Bloc(ABC, Generic[E, S]):
         ...
 
     def __init__(self, start_event) -> None:
-        self._event_subject = Stream[E]()
-        self._state_subject = Stream[S]()
-        self.bind_state_subject()
+        self._event_subject: Stream[E] = Stream[E]()
+        self._state_subject: Stream[S] = Stream[S]()
+        self._state: S = None
+        # self._bind_state_subject()
 
         # self.dispatch(start_event)
 
     async def dispatch(self, event: E) -> None:
         await self._event_subject.asend(event)
 
-    def bind_state_subject(self) -> None:
-        def _map_state_to_transition(next_state: S) -> None:
+    async def _bind_state_subject(self) -> None:
+        async def _map_state_to_transition(next_state: S) -> None:
             transititon = Transition[E, S](
                 current_state=self.state,
                 event=None,
                 next_state=next_state
             )
+
             self.on_transition(transititon)
+            await self._state_subject.asend(next_state)
 
-        self._event_subject.subscribe_async(pipe(
+        async def update_state(next_state: S):
+            self._state = next_state
+
+        xs: rx.AsyncObservable = pipe(
             self._event_subject,
-            rx.map(self.map_event_to_state),
-            rx.map(_map_state_to_transition),
-        ))
+            rx.map_async(self.map_event_to_state),
+        )
 
+        await self._state_subject.subscribe_async(
+            rx.AsyncAnonymousObserver(asend=update_state)
+        )
+
+        await xs.subscribe_async(
+            rx.AsyncAnonymousObserver(asend=_map_state_to_transition)
+        )
 
     def on_transition(self, transition: Transition) -> None:
         print(
@@ -56,7 +69,7 @@ class Bloc(ABC, Generic[E, S]):
 
     @property
     def state(self) -> S:
-        return self._state_subject
+        return self._state
 
     @abstractmethod
     async def map_event_to_state(self, current_state: S, event: E) -> Stream[S]:
