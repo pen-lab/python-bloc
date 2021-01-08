@@ -27,16 +27,15 @@ class Decrement(Event):
 class CounterBloc(Bloc[Event, int]):
 
     @property
-    def initial_state(self) -> int:
-        return 10
+    def initial_state(self) -> int: return 10
 
     async def map_event_to_state(self, event: Event) -> Stream[int]:
 
         if isinstance(event, Increment):
             await asyncio.sleep(5)
-            return self.state + 1
+            yield self.state + 1
         else:
-            return self.state - 1
+            yield self.state - 1
 
     async def on_transition(self, transition: Transition[Event, int]) -> None:
         print(f'{transition}')
@@ -48,7 +47,7 @@ class SimpleBlocDelegate(BlocDelegate):
         print(f'{transition}')
 
 
-async def main(bloc) -> None:
+async def main(bloc: Bloc) -> None:
     await bloc._bind_state_subject()
 
     await asyncio.gather(

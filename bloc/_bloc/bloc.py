@@ -54,7 +54,10 @@ class Bloc(ABC, Generic[E, S]):
 
         xs: rx.AsyncObservable = pipe(
             self._event_subject,
-            rx.map_async(self.map_event_to_state),
+            # rx.map_async(self.map_event_to_state),
+            # TODO: не работает, нужна возможность возвращать значение в поток
+            #  не прерывая текущий метод
+            rx.from_async_iterable(self.map_event_to_state)
         )
 
         await self._state_subject.subscribe_async(
