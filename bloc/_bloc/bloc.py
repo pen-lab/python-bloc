@@ -77,9 +77,8 @@ class Bloc(ABC, Generic[E, S]):
             rx.AsyncAnonymousObserver(asend=_map_state_to_transition)
         )
 
-    @abstractmethod
     async def on_transition(self, transition: Transition[E, S]) -> None:
-        ...
+        pass
 
     @property
     def state(self) -> S:
