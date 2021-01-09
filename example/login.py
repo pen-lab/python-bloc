@@ -3,9 +3,9 @@ import dataclasses
 from abc import ABC, abstractmethod
 
 from typing import Final
+from typing import AsyncGenerator
 
 from bloc import *
-
 
 
 @dataclasses.dataclass
@@ -102,12 +102,9 @@ class LoginBloc(Bloc[LoginEvent, LoginState]):
         )
 
     async def _authenticate(self, username: str, password: str) -> str:
-        return asyncio.sleep(5, '12kew333')
+        return await asyncio.sleep(10, '12kew333')
 
-
-    async def map_event_to_state(self, event: LoginEvent) -> Stream[LoginState]:
-        # TODO: не работает, нужна возможность возвращать значение
-        #  в поток не прерывая текущий метод
+    async def map_event_to_state(self, event: LoginEvent) -> AsyncGenerator[LoginState, None]:
         if isinstance(event, LoginButtonPressed):
             yield LoginState.loading()
 
@@ -116,6 +113,35 @@ class LoginBloc(Bloc[LoginEvent, LoginState]):
                 yield LoginState.success(token)
             except Exception as e:
                 yield LoginState.failure(f'{e}')
+
+
+class LoginUI(BlocDelegate):
+
+    task = None
+    is_loading = False
+
+    async def on_transition(self, transition: Transition[LoginEvent, LoginState]) -> None:
+        async def loading():
+            iter_num: int = 0
+            while self.is_loading:
+                await asyncio.sleep(2)
+                iter_num += 1
+                print('Authorization' + ('.' * iter_num))
+
+        if transition.next_state.login_data.is_loading:
+            self.is_loading = True
+            self.task = asyncio.create_task(loading())
+
+        error: str = transition.next_state.login_data.error
+        if error:
+            self.is_loading = False
+            print(f'Error: {error}')
+
+        token: str = transition.next_state.login_data.token
+
+        if token:
+            self.is_loading = False
+            print(f'Success: {token}')
 
 
 async def main(bloc: LoginBloc):
@@ -128,7 +154,6 @@ async def main(bloc: LoginBloc):
 
 
 if __name__ == '__main__':
-    # BlocSupervisor().delegate = SimpleBlocDelegate()
-    # counter_bloc = CounterBloc()
+    BlocSupervisor().delegate = LoginUI()
 
     asyncio.run(main(LoginBloc()))
