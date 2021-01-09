@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.9.1
-      - run: pip install poetry mkdocks
+      - run: pip install poetry
+      - run: pip install mkdocs
       - run: poetry install
       - run: mkdocs gh-deploy --force
