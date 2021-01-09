@@ -13,7 +13,7 @@ from bloc._bloc.bloc import E, S
 
 
 class Event(ABC):
-    pass
+    def __repr__(self): return self.__class__.__name__
 
 
 class Increment(Event):
@@ -29,13 +29,13 @@ class CounterBloc(Bloc[Event, int]):
     @property
     def initial_state(self) -> int: return 10
 
-    async def map_event_to_state(self, event: Event) -> Stream[int]:
+    async def map_event_to_state(self, event: Event):
 
         if isinstance(event, Increment):
             await asyncio.sleep(5)
-            yield self.state + 1
+            await self.update_state(event, self.state + 1)
         else:
-            yield self.state - 1
+            await self.update_state(event, self.state - 1)
 
     async def on_transition(self, transition: Transition[Event, int]) -> None:
         print(f'{transition}')
