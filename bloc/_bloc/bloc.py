@@ -1,6 +1,7 @@
 import dataclasses
 
 from typing import TypeVar
+from typing import AsyncGenerator
 from typing import Generic
 from abc import ABC, abstractmethod
 
@@ -60,12 +61,16 @@ class Bloc(ABC, Generic[E, S]):
             await self.on_transition(transititon)
             self._state = bloc_data.state
 
+        async def convert_stream_state_to_current_state(event: E) -> None:
+            async for state in self.map_event_to_state(event):
+                await self.update_state(event, state)
+
         xs: rx.AsyncObservable = pipe(
             self._event_subject,
         )
 
         await xs.subscribe_async(
-            rx.AsyncAnonymousObserver(asend=self.map_event_to_state)
+            rx.AsyncAnonymousObserver(asend=convert_stream_state_to_current_state)
         )
 
         await self._state_subject.subscribe_async(
@@ -82,7 +87,7 @@ class Bloc(ABC, Generic[E, S]):
 
     # TODO: add current_state
     @abstractmethod
-    async def map_event_to_state(self, event: E) -> Stream[S]:
+    async def map_event_to_state(self, event: E) -> AsyncGenerator[S, None]:
         ...
 
     async def dispose(self) -> None:

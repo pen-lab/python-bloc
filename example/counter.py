@@ -1,6 +1,8 @@
 import asyncio
 from abc import ABC
 
+from typing import AsyncGenerator
+
 
 from bloc import (
     BlocSupervisor,
@@ -29,13 +31,13 @@ class CounterBloc(Bloc[Event, int]):
     @property
     def initial_state(self) -> int: return 10
 
-    async def map_event_to_state(self, event: Event):
+    async def map_event_to_state(self, event: Event) -> AsyncGenerator[int, None]:
 
         if isinstance(event, Increment):
             await asyncio.sleep(5)
-            await self.update_state(event, self.state + 1)
+            yield self.state + 1
         else:
-            await self.update_state(event, self.state - 1)
+            yield self.state - 1
 
     async def on_transition(self, transition: Transition[Event, int]) -> None:
         print(f'{transition}')
