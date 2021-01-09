@@ -8,10 +8,9 @@ from bloc import (
     BlocSupervisor,
     BlocDelegate,
     Transition,
-    Stream,
     Bloc
 )
-from bloc._bloc.bloc import E, S
+
 
 
 class Event(ABC):
